@@ -1,27 +1,33 @@
-import { useActionState } from "react";
-
+import {  useActionState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Signin = () => {
-const[error, submitAction, isPending] = useActionState(
-  async(prevError, formData) => {
-    const email = formData.get("email")?.toString().trim() ?? ""
-    const password = formData.get("password")?.toString().trim() ?? ""
-   
-    if(!email || !password){
-        return "Email and password are required.";
-    }
-  
-    try {
-      // Add your authentication logic here
-      
-      return null;
-    } catch (err) {
-        console.error("Sign in error:", err);
-        return "Failed to sign in. Please try again.";
-    }
-  },
-  null
-)
+  const {signInUser} = useAuth()
+  const navigate = useNavigate()
+  const [error, submitAction, isPending] = useActionState(
+    async (previousState, formData) => {
+      const email = formData.get('email');
+      const password = formData.get('password');
+
+      try {
+        //2. Call our sign-in function
+       const {success,  data, error: signInError} = await signInUser(email, password)
+        if (signInError) {
+          return new Error(signInError);
+        }
+        if (success && data?.session) {
+          //Navigate to /dashboard
+          navigate('/dashboard')
+          return null;
+        }
+        return null;
+      } catch (error) {
+        console.error('Sign in error: ', error.message);
+        return new Error('An unexpected error occurred. Please try again.');
+      }
+    }, null
+  );
 
   return (
     <>
@@ -40,9 +46,9 @@ const[error, submitAction, isPending] = useActionState(
           <h2 className="form-title">Sign in</h2>
           <p>
             Don't have an account yet?{' '}
-            {/*<Link className="form-link">*/}
-              Sign up
-           {/*</Link>*/}
+            <Link className="form-link" to={'/signup'}>
+            Sign up
+            </Link>
           </p>
 
           <label htmlFor="email">Email</label>
@@ -54,8 +60,8 @@ const[error, submitAction, isPending] = useActionState(
             placeholder=""
             required
             aria-required="true"
-            aria-invalid={Boolean(error)}
-            aria-describedby="form-input"
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? 'signin-error' : undefined}
             disabled={isPending}
           />
 
@@ -67,23 +73,30 @@ const[error, submitAction, isPending] = useActionState(
             id="password"
             placeholder=""
             required
-           aria-required="true"
-            aria-invalid={Boolean(error)}
-            aria-describedby="form-input"
+            aria-required="true"
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? 'signin-error' : undefined}
             disabled={isPending}
           />
 
           <button
             type="submit"
             className="form-button"
-           disabled={isPending}
+            className="form-button"
             aria-busy={isPending}
           >
-            Sign In
-            {/*'Signing in...' when pending*/}
+            {isPending ? 'Signing in' : 'Sign In'}
           </button>
-          
-          {/* Error message */}
+
+          {error && (
+            <div
+              id="signin-error"
+              role="alert"
+              className="sign-form-error-message"
+            >
+              {error.message}
+            </div>
+          )}
         </form>
       </div>
     </>

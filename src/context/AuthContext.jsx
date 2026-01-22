@@ -24,8 +24,42 @@ useEffect(()=>{
         console.log('Session changed ',session)
     }) 
 },[])
+
+const signInUser = async(email, password) => {
+    try {
+        const {data, error} = await supabase.auth.signInWithPassword({
+            email: email.toLowerCase(),
+            password: password
+        })
+        if(error){
+            console.log(error.message)
+            return {success: false,  error: error.message}
+        }
+        console.log('Sign in success', data)
+        return {success:true,  data}
+    } catch (error) {
+        console.error('Unexpected error during sign-in:', error.message);
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
+    }
+}
+
+const signOut = async () => {
+    try {
+        const { error } = await supabase.auth.signOut()
+        if(error) {
+            console.log(error.message)
+            return {success: false, error: error.message}
+        }
+        console.log('Sign out success')
+        return {success: true}
+    } catch (error) {
+        console.error('Unexpected error during sign out:', error.message);
+        return { success: false, error: 'An unexpected error occurred. Please try again.' };
+    }
+}
+
     return (
-        <AuthContext.Provider value={{session}}>
+        <AuthContext.Provider value={{session, signInUser, signOut}}>
         {children}
         </AuthContext.Provider>
     )
